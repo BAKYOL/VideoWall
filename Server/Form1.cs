@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Net.Sockets;
 using System.Net;
-
+using AxRDPCOMAPILib;
 
 
 namespace Server
@@ -22,13 +22,25 @@ namespace Server
         {
             InitializeComponent();
         }
-        private TcpClient tcpclient; 
+        private TcpClient tcpclient;
+
+        public static void Connect(string invitation, AxRDPViewer display, string userName, string password)
+        {
+            display.Connect(invitation, userName, password);
+        }
+
+        public static void disconnect(AxRDPViewer display)
+        {
+            display.Disconnect();
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
+            string serverMessage="";
             try
             {
                 tcpclient = new TcpClient("localhost", 57000);
-                Byte[] bytes = new Byte[1024];
+                Byte[] bytes = new Byte[100000];
                 
                     try
                     {
@@ -56,8 +68,8 @@ namespace Server
                             var incommingData = new byte[length];
                             Array.Copy(bytes, 0, incommingData, 0, length);
                             // Convert byte array to string message. 						
-                            string serverMessage = Encoding.ASCII.GetString(incommingData);
-                            MessageBox.Show(serverMessage);
+                            serverMessage = Encoding.ASCII.GetString(incommingData);
+                            //MessageBox.Show(serverMessage);
                             break;
                             //Debug.Log("server message received as: " + serverMessage);
                         }
@@ -65,6 +77,31 @@ namespace Server
                 
             }
             catch { }
+
+            try
+            {
+                
+                Connect(serverMessage, this.axRDPViewer1, "", "");
+
+                double size = Convert.ToDouble(serverMessage.Split(new string[] { "Test" }, StringSplitOptions.None)[1].Substring(0, serverMessage.Split(new string[] { "Test" }, StringSplitOptions.None)[1].IndexOf('"') - 1));
+                if (panel2.Width > (int)(panel2.Height*size))
+                {
+                    axRDPViewer1.Height = panel2.Height;
+                    axRDPViewer1.Width = Convert.ToInt32(axRDPViewer1.Height * size);
+                }
+                else
+                {
+                    axRDPViewer1.Width = panel2.Width;
+                    axRDPViewer1.Height = Convert.ToInt32(axRDPViewer1.Width / size);
+                }
+                axRDPViewer1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+                axRDPViewer1.SmartSizing = true;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Unable to connect to the Server");
+            }
         }
+
     }
 }

@@ -10,11 +10,35 @@ using System.Windows.Forms;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using RDPCOMAPILib;
 
 namespace Client
 {
+
     public partial class Form1 : Form
     {
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowRect(IntPtr hWnd, ref RECT lpRect);
+
+        // http://msdn.microsoft.com/en-us/library/a5ch4fda(VS.80).aspx
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        const uint SWP_NOSIZE = 0x0001;
+        const uint SWP_NOZORDER = 0x0004;
+
         private TcpListener tcplis;
         private Thread lisThread;
         private TcpClient tcpclient;
@@ -53,7 +77,7 @@ namespace Client
                                 // Convert byte array to string message. 							
                                 string clientMessage = Encoding.ASCII.GetString(incommingData);
                                 MessageBox.Show(clientMessage);
-                                if (clientMessage == "RDPler nedir?")
+                                if (clientMessage == "RDPler edir?")
                                 {
                                     try
                                     {
@@ -61,9 +85,9 @@ namespace Client
                                         NetworkStream streamc = tcpclient.GetStream();
                                         if (streamc.CanWrite)
                                         {
-                                            string serverMessage = "This is a message from your server.";
+                                            
                                             // Convert string message to byte array.                 
-                                            byte[] serverMessageAsByteArray = Encoding.ASCII.GetBytes(serverMessage);
+                                            byte[] serverMessageAsByteArray = Encoding.ASCII.GetBytes(textBox1.Text);
                                             // Write byte array to socketConnection stream.               
                                             streamc.Write(serverMessageAsByteArray, 0, serverMessageAsByteArray.Length);
                                             
@@ -74,7 +98,10 @@ namespace Client
                                         MessageBox.Show("Socket exception: " + socketException);
                                     }
                                 }
-                                tcpclient.Close();
+                                while (tcpclient.Connected)
+                                {
+                                    System.Threading.Thread.Sleep(100);
+                                }
                                 break;
                             }
                         }
@@ -86,6 +113,55 @@ namespace Client
                 MessageBox.Show(ex.Message);
             }
 
+        }
+        public static RDPSession currentSession = null;
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Process ps = Process.Start("msedge", @"--new-window --user-data-dir=c:\deneme http://www.gmail.com");
+            Thread.Sleep(2000);
+            SetWindowPos(ps.MainWindowHandle, IntPtr.Zero, Screen.AllScreens[1].WorkingArea.Left+1, Screen.AllScreens[1].WorkingArea.Top, Screen.AllScreens[1].WorkingArea.Width,Screen.AllScreens[1].WorkingArea.Height,0);
+            createSession();
+            RECT rect = new RECT();
+
+            GetWindowRect(ps.MainWindowHandle, ref rect);
+            Connect(currentSession,rect);
+            float ratio = ((float)rect.Right - rect.Left) / ((float)rect.Bottom - rect.Top);
+            textBox1.Text = getConnectionString(currentSession,
+                "Test"+(ratio).ToString(), "Group", "", 5);
+
+        }
+
+        public static void createSession()
+        {
+            currentSession = new RDPSession();
+        }
+
+        public static void Connect(RDPSession session, RECT rect)
+        {
+            session.OnAttendeeConnected += Incoming;
+            session.Properties["PortId"] = 57001;
+            session.SetDesktopSharedRect(rect.Left, rect.Top, rect.Right, rect.Bottom);
+            session.Open();
+        }
+
+        public static void Disconnect(RDPSession session)
+        {
+            session.Close();
+        }
+
+        public static string getConnectionString(RDPSession session, String authString,
+            string group, string password, int clientLimit)
+        {
+            IRDPSRAPIInvitation invitation =
+                session.Invitations.CreateInvitation
+                (authString, group, password, clientLimit);
+            return invitation.ConnectionString;
+        }
+
+        private static void Incoming(object Guest)
+        {
+            IRDPSRAPIAttendee MyGuest = (IRDPSRAPIAttendee)Guest;
+            MyGuest.ControlLevel = CTRL_LEVEL.CTRL_LEVEL_INTERACTIVE;
         }
     }
 }
