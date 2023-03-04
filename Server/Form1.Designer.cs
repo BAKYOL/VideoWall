@@ -33,6 +33,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.panel2 = new System.Windows.Forms.Panel();
             this.axRDPViewer1 = new AxRDPCOMAPILib.AxRDPViewer();
+            this.button2 = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.axRDPViewer1)).BeginInit();
@@ -40,6 +41,7 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.button1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
@@ -78,6 +80,16 @@
             this.axRDPViewer1.Size = new System.Drawing.Size(1191, 480);
             this.axRDPViewer1.TabIndex = 3;
             // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(784, 29);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.TabIndex = 2;
+            this.button2.Text = "button2";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
             // frmDisplay
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -100,6 +112,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Panel panel2;
         private AxRDPCOMAPILib.AxRDPViewer axRDPViewer1;
+        private System.Windows.Forms.Button button2;
     }
 }
 

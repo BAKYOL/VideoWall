@@ -96,6 +96,7 @@ namespace Server
                 }
                 axRDPViewer1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
                 axRDPViewer1.SmartSizing = true;
+                
             }
             catch (Exception)
             {
@@ -103,5 +104,19 @@ namespace Server
             }
         }
 
+        private void button2_Click(object sender, EventArgs e)
+        {
+            VideoWallSiniflar.RECT frmTb = new VideoWallSiniflar.RECT();
+
+            frmTb.left = 0;
+            frmTb.top = 0;
+            frmTb.right = 3000;
+            frmTb.bottom = 1079;
+
+
+
+            VideoWallSiniflar.frmYerlesim frmLayout = new VideoWallSiniflar.frmYerlesim(frmTb);
+            frmLayout.ShowDialog(this);
+        }
     }
 }

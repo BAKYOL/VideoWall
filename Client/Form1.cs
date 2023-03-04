@@ -119,13 +119,13 @@ namespace Client
         {
             Process ps = Process.Start("msedge", @"--new-window --user-data-dir=c:\deneme http://www.gmail.com");
             Thread.Sleep(2000);
-            SetWindowPos(ps.MainWindowHandle, IntPtr.Zero, Screen.AllScreens[1].WorkingArea.Left+1, Screen.AllScreens[1].WorkingArea.Top, Screen.AllScreens[1].WorkingArea.Width,Screen.AllScreens[1].WorkingArea.Height,0);
+            SetWindowPos(ps.MainWindowHandle, IntPtr.Zero, Screen.AllScreens[0].WorkingArea.Left, Screen.AllScreens[0].WorkingArea.Top, 500,500,0);
             createSession();
             RECT rect = new RECT();
 
             GetWindowRect(ps.MainWindowHandle, ref rect);
             Connect(currentSession,rect);
-            float ratio = ((float)rect.Right - rect.Left) / ((float)rect.Bottom - rect.Top);
+            float ratio = ((float)rect.Right - rect.Left+1) / ((float)rect.Bottom - rect.Top+1);
             textBox1.Text = getConnectionString(currentSession,
                 "Test"+(ratio).ToString(), "Group", "", 5);
 
