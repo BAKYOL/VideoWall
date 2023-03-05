@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
+
+
 namespace VideoWallSiniflar
 {
     
@@ -29,6 +31,7 @@ namespace VideoWallSiniflar
         private float olcek;
         public frmYerlesim(RECT frmEbat)
         {
+            
             this.frmEbat = frmEbat;
             InitializeComponent();
         }
@@ -74,15 +77,22 @@ namespace VideoWallSiniflar
             }
 
             pnlfrmTb.Refresh();
-            Bitmap bm = new Bitmap(Owner.Width, Owner.Height);
 
-            Owner.DrawToBitmap(bm, new Rectangle(0, 0, Owner.Width, Owner.Height));
-            
+            AxRDPCOMAPILib.AxRDPViewer ctrl = (AxRDPCOMAPILib.AxRDPViewer)Owner.Controls.Find("AxRDPViewer1", true)[0];
+
+            Bitmap bm = new Bitmap(ctrl.Width, ctrl.Height);
+
+            SuspendLayout();
+            ReverseControlZIndex(ctrl);
+            ctrl.DrawToBitmap(bm, new Rectangle(0, 0, ctrl.Width, ctrl.Height));
+            ReverseControlZIndex(ctrl);
+            ResumeLayout(true);
+
             pnlfrmTb.Controls.Add(new Panel()
             {
                 Name = "pic1",
-            Width = 100,
-            Height = 100,
+            Width = Convert.ToInt32(ctrl.Width*olcek),
+            Height = Convert.ToInt32(ctrl.Height * olcek)
             
             }
                 
@@ -111,6 +121,24 @@ namespace VideoWallSiniflar
             tt.ReshowDelay = 500;
             tt.SetToolTip(lb, "XXX Demo");
 
+        }
+
+        private void ReverseControlZIndex(Control parentControl)
+        {
+            var list = new List<Control>();
+            foreach (Control i in parentControl.Controls)
+            {
+                list.Add(i);
+            }
+            var total = list.Count;
+            for (int i = 0; i < total / 2; i++)
+            {
+                var left = parentControl.Controls.GetChildIndex(list[i]);
+                var right = parentControl.Controls.GetChildIndex(list[total - 1 - i]);
+
+                parentControl.Controls.SetChildIndex(list[i], right);
+                parentControl.Controls.SetChildIndex(list[total - 1 - i], left);
+            }
         }
 
         private void Pnl_Paint(object sender, PaintEventArgs e)
