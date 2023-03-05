@@ -8,12 +8,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-
+using System.Runtime.InteropServices;
 
 namespace VideoWallSiniflar
 {
-    
 
+
+
+
+
+[StructLayout(LayoutKind.Sequential)]
     public struct RECT
     {
         public int left;
@@ -25,12 +29,37 @@ namespace VideoWallSiniflar
     public partial class frmYerlesim : Form
     {
 
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetDesktopWindow();
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindowDC(IntPtr hWnd);
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindowRect(IntPtr hWnd, ref RECT rect);
+        [DllImport("user32.dll")]
+        public static extern IntPtr ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        [DllImport("gdi32.dll")]
+        public static extern bool BitBlt(IntPtr hObject, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hObjectSource, int nXSrc, int nYSrc, int dwRop);
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateCompatibleBitmap(IntPtr hDC, int nWidth, int nHeight);
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateCompatibleDC(IntPtr hDC);
+        [DllImport("gdi32.dll")]
+        public static extern bool DeleteDC(IntPtr hDC);
+        [DllImport("gdi32.dll")]
+        public static extern bool DeleteObject(IntPtr hObject);
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+
         List<Rectangle> dikdortgenler = new List<Rectangle>();
         private RECT frmEbat;
+        public const int SRCCOPY = 13369376;
 
         private float olcek;
         public frmYerlesim(RECT frmEbat)
         {
+
             
             this.frmEbat = frmEbat;
             InitializeComponent();
@@ -80,13 +109,29 @@ namespace VideoWallSiniflar
 
             AxRDPCOMAPILib.AxRDPViewer ctrl = (AxRDPCOMAPILib.AxRDPViewer)Owner.Controls.Find("AxRDPViewer1", true)[0];
 
-            Bitmap bm = new Bitmap(ctrl.Width, ctrl.Height);
+            IntPtr hdcSrc = GetWindowDC(ctrl.Handle);
 
-            SuspendLayout();
-            ReverseControlZIndex(ctrl);
-            ctrl.DrawToBitmap(bm, new Rectangle(0, 0, ctrl.Width, ctrl.Height));
-            ReverseControlZIndex(ctrl);
-            ResumeLayout(true);
+            RECT windowRect = new RECT();
+            GetWindowRect(ctrl.Handle, ref windowRect);
+
+            int width = windowRect.right - windowRect.left;
+            int height = windowRect.bottom - windowRect.top;
+
+            IntPtr hdcDest = CreateCompatibleDC(hdcSrc);
+            IntPtr hBitmap = CreateCompatibleBitmap(hdcSrc, width, height);
+
+            IntPtr hOld = SelectObject(hdcDest, hBitmap);
+            BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, SRCCOPY);
+            SelectObject(hdcDest, hOld);
+            DeleteDC(hdcDest);
+            ReleaseDC(ctrl.Handle, hdcSrc);
+
+            Image image = Image.FromHbitmap(hBitmap);
+            DeleteObject(hBitmap);
+
+            
+
+
 
             pnlfrmTb.Controls.Add(new Panel()
             {
@@ -98,7 +143,7 @@ namespace VideoWallSiniflar
                 
                 );
             Panel pnl = (Panel)pnlfrmTb.Controls.Find("pic1", true)[0];
-            pnl.BackgroundImage = bm;
+            pnl.BackgroundImage = image;
             pnl.BackgroundImageLayout = ImageLayout.Stretch;
             Label lb = new Label()
             {
